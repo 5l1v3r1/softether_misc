@@ -1,0 +1,74 @@
+#!/bin/sh
+# chkconfig: 345 45 01
+# description: SoftEther VPN Server
+
+DAEMON=/usr/local/vpnserver/vpnserver
+LOCK=/var/lock/subsys/vpnserver
+
+# IP address to be assigned to tap device created by SoftEther  
+# when it starts. This should be the first IP address of the 
+# subnet that is managed by dnsmasq service.
+TAP_VPN_IP=10.10.16.1
+TAP_VPN_NETWORK=10.10.16.0/20
+TAP_VPN_NETMASK=255.255.240.0
+
+# Create this file and put in all the subnet-to-IP relationship.
+# Syntax:
+#
+# <Smaller Subnet 1>=<Public IP 1>
+# <Smaller Subnet 2>=<Public IP 2>
+# ... and so on.
+#
+# For e.g.:
+#
+# 10.10.16.0/27=50.7.146.243
+# 10.10.16.32/27=50.7.146.244
+ALIASFILE=/etc/subnetalias
+
+test -x $DAEMON || exit 0
+
+assign_ip() {
+	ifconfig tap_vpn $TAP_VPN_IP netmask $TAP_VPN_NETMASK
+}
+
+create_fw_rules() {
+	test -f $ALIASFILE || return 0
+
+	content=$(grep -Ev "^\s*#|^\s*$" $ALIASFILE | perl -p -e "s/( |\t)//g")
+	if [ "$content" == "" ]; then return; fi
+
+	for line in $content
+		do
+			SUBNET=$(echo $line | cut -f1 -d'=')
+			PUBLICIP=$(echo $line | cut -f2 -d'=')
+			/sbin/iptables -t nat -A POSTROUTING -s $SUBNET -j SNAT --to-source $PUBLICIP
+		done
+}
+
+flush_fw_rules() {
+	/sbin/iptables -t nat -F
+}
+
+case "$1" in
+start)
+	$DAEMON start
+	touch $LOCK
+	sleep 5
+	assign_ip
+	create_fw_rules
+	;;
+stop)
+	$DAEMON stop
+	rm $LOCK
+	flush_fw_rules
+	;;
+restart)
+	$DAEMON stop
+	sleep 3
+	$DAEMON start
+	;;
+*)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+exit 0
