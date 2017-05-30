@@ -8,6 +8,9 @@
 # IP for each of them. NOTE: The Public IP(s) must be routed to
 # the server, and configured properly (must show in `ifconfig`).
 #
+# To calculate subnets accurately, use any online tool like:
+# https://www.site24x7.com/tools/ipv4-subnetcalculator.html
+#
 # Syntax:
 #
 # <Smaller Subnet 1> = <Public IP 1>
