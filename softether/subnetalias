@@ -1,0 +1,21 @@
+# SUBNET-TO-PUBLICIP ALIAS CONFIGURATION
+# ----------------------------------------------------------------
+# Used by /etc/init.d/vpnserver startup script to configure
+# firewall rules.
+# 
+# Split the main network address range managed by dnsmasq (which
+# is 10.10.16.0/20) into smaller subnets, and then assign a Public
+# IP for each of them. NOTE: The Public IP(s) must be routed to
+# the server, and configured properly (must show in `ifconfig`).
+#
+# Syntax:
+#
+# <Smaller Subnet 1> = <Public IP 1>
+# <Smaller Subnet 2> = <Public IP 2>
+# ... and so on.
+#
+# For e.g.:
+#
+# 10.10.16.0/27 = 50.7.146.243
+# 10.10.16.32/27 = 50.7.146.244
+#
