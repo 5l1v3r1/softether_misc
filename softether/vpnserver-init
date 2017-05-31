@@ -69,13 +69,8 @@ stop)
 	rm $LOCK
 	flush_fw_rules
 	;;
-restart)
-	$DAEMON stop
-	sleep 3
-	$DAEMON start
-	;;
 *)
-	echo "Usage: $0 {start|stop|restart}"
+	echo "Usage: $0 {start|stop}"
 	exit 1
 esac
 exit 0
