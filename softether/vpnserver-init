@@ -4,6 +4,7 @@
 
 DAEMON=/usr/local/vpnserver/vpnserver
 LOCK=/var/lock/subsys/vpnserver
+FW=/sbin/iptables
 
 # IP address to be assigned to tap device created by SoftEther  
 # when it starts. This should be the first IP address of the 
@@ -34,6 +35,11 @@ assign_ip() {
 create_fw_rules() {
 	test -f $ALIASFILE || return 0
 
+	$FW -A INPUT -s $TAP_VPN_NETWORK -p icmp -j DROP
+	$FW -A INPUT -s $TAP_VPN_NETWORK -p tcp --dport 22 -j DROP
+	$FW -A INPUT -s $TAP_VPN_NETWORK -p tcp --dport 53 -j DROP
+	$FW -A INPUT -s $TAP_VPN_NETWORK -p udp --dport 53 -j DROP
+
 	content=$(grep -Ev "^\s*#|^\s*$" $ALIASFILE | perl -p -e "s/( |\t)//g")
 	if [ "$content" == "" ]; then return; fi
 
@@ -41,12 +47,13 @@ create_fw_rules() {
 		do
 			SUBNET=$(echo $line | cut -f1 -d'=')
 			PUBLICIP=$(echo $line | cut -f2 -d'=')
-			/sbin/iptables -t nat -A POSTROUTING -s $SUBNET -j SNAT --to-source $PUBLICIP
+			$FW -t nat -A POSTROUTING -s $SUBNET -j SNAT --to-source $PUBLICIP
 		done
 }
 
 flush_fw_rules() {
-	/sbin/iptables -t nat -F
+	$FW -t filter -F
+	$FW -t nat -F
 }
 
 case "$1" in
